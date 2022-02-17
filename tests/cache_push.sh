@@ -7,9 +7,9 @@ testApp="https://github.com/csonuryilmaz/TextPad.git"
 export GRADLE_OPTS="-Dorg.gradle.daemon=false"
 
 # Workflow step input variables (component.yml>inputs)
-export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle:\$HOME/.gradle:\$HOME/bar"
+export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle/:\$HOME/.gradle/:\$HOME/bar:app/build/"
 #AC_CACHE_INCLUDED_PATHS="local.properties:.gradle:\$HOME/.gradle:/foo::/:bar"
-export AC_CACHE_EXCLUDED_PATHS="\$HOME/.gradle/caches/*.lock"
+export AC_CACHE_EXCLUDED_PATHS="\$HOME/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/logs/*"
 export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
 export AC_CACHE_LABEL="master/app-deps"
 

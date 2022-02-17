@@ -3,6 +3,12 @@ buildPlatform:
 displayName: "Cache Push"
 description: "Uploads user selected files and folders to Appcircle cache."
 inputs:
+- key: "AC_CACHE_LABEL"
+  defaultValue: "$AC_GIT_BRANCH/cache"
+  isRequired: true
+  title: Cache Label
+  description: "User defined cache label to identify one cache from others. Both cache push and pull steps should have the same value to match."
+  helpText:
 - key: "AC_CACHE_INCLUDED_PATHS"
   isRequired: true
   title: Included Paths

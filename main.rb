@@ -39,41 +39,47 @@ puts ''
 
 system("mkdir -p #{@cache}/repository")
 
-def cache_path(base_path, included_path, base_replace_with = '')
+def cache_path(base_path, included_path, excluded_paths)
   puts "Global Include: #{included_path}"
 
-  included_path = included_path[(base_path.length + 1)..-1]
-  base_path = base_replace_with unless base_replace_with.empty?
   glob_pattern = "#{base_path}/#{included_path}"
 
-  filtered_paths = Dir.glob(glob_pattern)
-  return if filtered_paths.empty?
+  paths = Dir.glob(glob_pattern)
+  return if paths.empty?
 
   zip_file = "#{@cache}/#{glob_pattern.gsub('/', '_')}.zip"
   zip = "zip -r -FS #{zip_file}"
-  filtered_paths.each do |f|
+  paths.each do |f|
     zip += " #{f}"
+  end
+  zip += ' -x' unless excluded_paths.empty?
+  excluded_paths.each do |excluded|
+    zip += " #{excluded}"
   end
   run_command("#{zip} > #{zip_file}.log")
   run_command_silent("ls -lh #{zip_file}")
 end
 
-def cache_repository_path(base_path, included_path)
+def cache_repository_path(base_path, included_path, excluded_paths)
   puts "Repository Include: #{included_path}"
 
   cwd = Dir.pwd
   Dir.chdir(base_path)
-  filtered_paths = Dir.glob(included_path.to_s)
+  paths = Dir.glob(included_path.to_s)
 
-  if filtered_paths.empty?
+  if paths.empty?
     Dir.chdir(cwd)
     return
   end
 
   zip_file = "#{cwd}/#{@cache}/repository/#{included_path.gsub('/', '_')}.zip"
   zip = "zip -r -FS #{zip_file}"
-  filtered_paths.each do |f|
+  paths.each do |f|
     zip += " #{f}"
+  end
+  zip += ' -x' unless excluded_paths.empty?
+  excluded_paths.each do |excluded|
+    zip += " #{excluded}"
   end
   run_command("#{zip} > #{zip_file}.log")
   run_command_silent("ls -lh #{zip_file}")
@@ -81,18 +87,47 @@ def cache_repository_path(base_path, included_path)
   Dir.chdir(cwd)
 end
 
+def get_excluded_paths(paths)
+  r_excludes = []
+  g_excludes = []
+
+  paths.split(':').each do |path|
+    path = path[1..-1] if !path.empty? && path[0] == '/'
+    next if path.empty?
+
+    # @todo: Check $home path for other types of agents and build profiles
+    if path.start_with?('$HOME')
+      path = path[('$HOME'.length + 1)..-1]
+      g_excludes.push("/setup/#{path}")
+    else
+      r_excludes.push(path)
+    end
+  end
+  { 'global' => g_excludes, 'repository' => r_excludes }
+end
+
+excluded_paths = get_excluded_paths(ac_cache_excluded_paths)
+puts excluded_paths
+
 ac_cache_included_paths.split(':').each do |included_path|
   included_path = included_path[1..-1] if !included_path.empty? && included_path[0] == '/'
   next if included_path.empty?
 
   # @todo: Check $home path for other types of agents and build profiles
   if included_path.start_with?('$HOME')
-    cache_path('$HOME', included_path, '/setup')
+    included_path = included_path[('$HOME'.length + 1)..-1]
+    cache_path('/setup', included_path, excluded_paths['global'])
   else
-    cache_repository_path(ac_repository_path, included_path)
+    cache_repository_path(ac_repository_path, included_path, excluded_paths['repository'])
   end
 end
 
 run_command_silent("[ -s #{zipped} ] || rm -f #{zipped}")
 run_command("zip -r -0 -FS #{zipped} #{@cache}")
 run_command_silent("ls -lh #{zipped}")
+
+if get_env_variable('AC_CACHE_PUT_URL')
+  puts ''
+  puts 'Uploading cache...'
+  run_command_silent("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
+end
