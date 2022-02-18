@@ -14,6 +14,7 @@ export AC_CACHE_EXCLUDED_PATHS='~/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/log
 export AC_REPOSITORY_DIR=""
 export AC_CACHE_LABEL="master/app-deps"
 export AC_TOKEN_ID="x"
+export ASPNETCORE_CALLBACK_URL="https://dev-api.appcircle.io/build/v1/callback"
 
 if [ ! -z $AC_REPOSITORY_DIR ]; then 
   mkdir -p $AC_REPOSITORY_DIR
