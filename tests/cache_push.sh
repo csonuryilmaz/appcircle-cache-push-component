@@ -7,28 +7,31 @@ testApp="https://github.com/csonuryilmaz/TextPad.git"
 export GRADLE_OPTS="-Dorg.gradle.daemon=false"
 
 # Workflow step input variables (component.yml>inputs)
-export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle/:\$HOME/.gradle/:\$HOME/bar:app/build/"
+export AC_CACHE_INCLUDED_PATHS='foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/'
 #AC_CACHE_INCLUDED_PATHS="local.properties:.gradle:\$HOME/.gradle:/foo::/:bar"
-export AC_CACHE_EXCLUDED_PATHS="\$HOME/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/logs/*"
-export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
+export AC_CACHE_EXCLUDED_PATHS='~/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/logs/*'
+#export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
+export AC_REPOSITORY_DIR=""
 export AC_CACHE_LABEL="master/app-deps"
 export AC_TOKEN_ID="x"
 
-mkdir -p $AC_REPOSITORY_DIR
-if [ ! "$(ls -A $AC_REPOSITORY_DIR)" ]; then 
-  rm -rf $HOME/.gradle
-  git clone $testApp $AC_REPOSITORY_DIR
-fi
+if [ ! -z $AC_REPOSITORY_DIR ]; then 
+  mkdir -p $AC_REPOSITORY_DIR
+  if [ ! "$(ls -A $AC_REPOSITORY_DIR)" ]; then 
+    rm -rf $HOME/.gradle
+    git clone $testApp $AC_REPOSITORY_DIR
+  fi
 
-if [ ! -f "$AC_REPOSITORY_DIR/local.properties" ]; then
-  echo "sdk.dir=/home/onur/Android/Sdk" > $AC_REPOSITORY_DIR/local.properties
-fi
+  if [ ! -f "$AC_REPOSITORY_DIR/local.properties" ]; then
+    echo "sdk.dir=/home/onur/Android/Sdk" > $AC_REPOSITORY_DIR/local.properties
+  fi
 
-if [ ! -d "$AC_REPOSITORY_DIR/app/build" ]; then
-  cwd=$(pwd)
-  cd $AC_REPOSITORY_DIR
-  chmod +x ./gradlew && ./gradlew --build-cache app:assembleDebug
-  cd $cwd
+  if [ ! -d "$AC_REPOSITORY_DIR/app/build" ]; then
+    cwd=$(pwd)
+    cd $AC_REPOSITORY_DIR
+    chmod +x ./gradlew && ./gradlew --build-cache app:assembleDebug
+    cd $cwd
+  fi
 fi
 
 if [ ! -L "/setup" ]; then
