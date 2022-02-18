@@ -1,6 +1,6 @@
-require 'fileutils'
-require 'pathname'
 require 'English'
+require 'net/http'
+require 'json'
 
 def get_env_variable(key)
   return nil if ENV[key].nil? || ENV[key].strip.empty?
@@ -25,6 +25,10 @@ ac_cache_included_paths = get_env_variable('AC_CACHE_INCLUDED_PATHS') || abort('
 ac_cache_excluded_paths = get_env_variable('AC_CACHE_EXCLUDED_PATHS')
 ac_repository_path = get_env_variable('AC_REPOSITORY_DIR') || abort('Repository path must be defined.')
 ac_cache_label = get_env_variable('AC_CACHE_LABEL') || abort('Cache label path must be defined.')
+ac_token_id = get_env_variable('AC_TOKEN_ID') || abort('AC_TOKEN_ID env variable must be set when build started.')
+
+# @todo: base url should be dynamic
+signed_url_api = 'https://dev-api.appcircle.io/build/v1/callback?action=getCacheUrls'
 
 install_deps_if_not_exist('curl')
 install_deps_if_not_exist('zip')
@@ -44,7 +48,7 @@ def cache_path(base_path, included_path, excluded_paths)
 
   glob_pattern = "#{base_path}/#{included_path}"
 
-  paths = Dir.glob(glob_pattern)
+  paths = Dir.glob(glob_pattern, File::FNM_DOTMATCH)
   return if paths.empty?
 
   zip_file = "#{@cache}/#{glob_pattern.gsub('/', '_')}.zip"
@@ -65,7 +69,7 @@ def cache_repository_path(base_path, included_path, excluded_paths)
 
   cwd = Dir.pwd
   Dir.chdir(base_path)
-  paths = Dir.glob(included_path.to_s)
+  paths = Dir.glob(included_path.to_s, File::FNM_DOTMATCH)
 
   if paths.empty?
     Dir.chdir(cwd)
@@ -126,8 +130,20 @@ run_command_silent("[ -s #{zipped} ] || rm -f #{zipped}")
 run_command("zip -r -0 -FS #{zipped} #{@cache}")
 run_command_silent("ls -lh #{zipped}")
 
-if get_env_variable('AC_CACHE_PUT_URL')
+unless ac_token_id.empty?
   puts ''
-  puts 'Uploading cache...'
-  run_command_silent("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
+
+  ws_signed_url = "#{signed_url_api}&cacheKey=#{ac_cache_label.gsub('/', '_')}&tokenId=#{ac_token_id}"
+  puts ws_signed_url
+
+  uri = URI(ws_signed_url)
+  response = Net::HTTP.get(uri)
+  unless response.empty?
+    puts 'Uploading cache...'
+    signed = JSON.parse(response)
+    puts signed['putUrl']
+
+    ENV['AC_CACHE_PUT_URL'] = signed['putUrl']
+    run_command_silent("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
+  end
 end

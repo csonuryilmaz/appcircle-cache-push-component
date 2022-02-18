@@ -12,6 +12,7 @@ export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle/:\$HOME/.gradle/:\$
 export AC_CACHE_EXCLUDED_PATHS="\$HOME/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/logs/*"
 export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
 export AC_CACHE_LABEL="master/app-deps"
+export AC_TOKEN_ID="x"
 
 mkdir -p $AC_REPOSITORY_DIR
 if [ ! "$(ls -A $AC_REPOSITORY_DIR)" ]; then 
@@ -34,7 +35,10 @@ if [ ! -L "/setup" ]; then
   sudo ln -sf $HOME /setup
 fi
 
+START_TIME=$SECONDS
 echo ""
 echo "@@[section:begin] Step started: Cache Push"
 ruby main.rb
 echo "@@[section:end] Step completed: Cache Push"
+ELAPSED_TIME=$(($SECONDS - $START_TIME))
+echo "took $ELAPSED_TIME s"
