@@ -2,6 +2,7 @@ require 'English'
 require 'net/http'
 require 'json'
 require 'os'
+require 'digest'
 
 def get_env_variable(key)
   return nil if ENV[key].nil? || ENV[key].strip.empty?
@@ -11,7 +12,7 @@ end
 
 def run_command(command)
   unless system(command)
-    puts "Unexpected exit with #{exit $CHILD_STATUS.exitstatus} code. Check logs for details."
+    puts "Unexpected exit with code #{$CHILD_STATUS.exitstatus}. Check logs for details."
     exit 0
   end
 end
@@ -34,6 +35,11 @@ ac_cache_label = get_env_variable('AC_CACHE_LABEL') || abort_with0('Cache label 
 ac_token_id = get_env_variable('AC_TOKEN_ID') || abort_with0('AC_TOKEN_ID env variable must be set when build started.')
 ac_callback_url = get_env_variable('ASPNETCORE_CALLBACK_URL') ||
                   abort_with0('ASPNETCORE_CALLBACK_URL env variable must be set when build started.')
+
+def ac_output_dir
+  out_dir = get_env_variable('AC_OUTPUT_DIR')
+  out_dir && Dir.exist?(out_dir) ? out_dir : nil
+end
 
 signed_url_api = "#{ac_callback_url}?action=getCacheUrls"
 
@@ -70,7 +76,11 @@ def cache_path(base_path, included_path, excluded_paths)
   excluded_paths.each do |excluded|
     zip += " #{excluded}"
   end
-  run_command_with_log("#{zip} > #{zip_file}.log")
+  if ac_output_dir
+    system("mkdir -p #{ac_output_dir}/#{@cache}")
+    zip += " > #{ac_output_dir}/#{zip_file}.log"
+  end
+  run_command_with_log(zip)
   run_command("ls -lh #{zip_file}")
 end
 
@@ -95,7 +105,11 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   excluded_paths.each do |excluded|
     zip += " #{excluded}"
   end
-  run_command_with_log("#{zip} > #{zip_file}.log")
+  if ac_output_dir
+    system("mkdir -p #{ac_output_dir}/#{@cache}/repository")
+    zip += " > #{ac_output_dir}/#{@cache}/repository/#{included_path.gsub('/', '_')}.zip.log"
+  end
+  run_command_with_log(zip)
   run_command("ls -lh #{zip_file}")
 
   Dir.chdir(cwd)
@@ -147,6 +161,16 @@ end
 run_command("[ -s #{zipped} ] || rm -f #{zipped}")
 run_command_with_log("zip -r -0 -FS #{zipped} #{@cache}")
 run_command("ls -lh #{zipped}")
+
+if File.exist?("#{zipped}.md5")
+  pulled_md5sum = File.open("#{zipped}.md5", 'r', &:readline).strip
+  pushed_md5sum = Digest::MD5.file(zipped).hexdigest
+  puts "#{pulled_md5sum} =? #{pushed_md5sum}"
+  if pulled_md5sum == pushed_md5sum
+    puts 'Cache is the same as pulled one. No need to upload.'
+    exit 0
+  end
+end
 
 unless ac_token_id.empty?
   puts ''
