@@ -10,9 +10,9 @@ export GRADLE_OPTS="-Dorg.gradle.daemon=false"
 export AC_CACHE_INCLUDED_PATHS='foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/'
 #AC_CACHE_INCLUDED_PATHS="local.properties:.gradle:\$HOME/.gradle:/foo::/:bar"
 export AC_CACHE_EXCLUDED_PATHS='~/.gradle/caches/*.lock:**/*.apk:**/apk/*:**/logs/*'
-#export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
-export AC_REPOSITORY_DIR=""
-export AC_CACHE_LABEL="master/app-deps"
+export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
+#export AC_REPOSITORY_DIR=""
+export AC_CACHE_LABEL="8a7719b1-05fb-41c3-96e7-c764fdb036e1/master/app-deps"
 export AC_TOKEN_ID="x"
 export ASPNETCORE_CALLBACK_URL="https://dev-api.appcircle.io/build/v1/callback"
 

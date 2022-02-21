@@ -1,6 +1,7 @@
 require 'English'
 require 'net/http'
 require 'json'
+require 'os'
 
 def get_env_variable(key)
   return nil if ENV[key].nil? || ENV[key].strip.empty?
@@ -17,12 +18,8 @@ def run_command_silent(command)
   exit $CHILD_STATUS.exitstatus unless system(command)
 end
 
-def install_deps_if_not_exist(tool)
-  run_command_silent("dpkg -s #{tool} > /dev/null 2>&1 || apt-get -y install #{tool} > /dev/null 2>&1")
-end
-
 ac_cache_included_paths = get_env_variable('AC_CACHE_INCLUDED_PATHS') || abort('Included paths must be defined.')
-ac_cache_excluded_paths = get_env_variable('AC_CACHE_EXCLUDED_PATHS')
+ac_cache_excluded_paths = get_env_variable('AC_CACHE_EXCLUDED_PATHS') || ''
 ac_repository_path = get_env_variable('AC_REPOSITORY_DIR')
 ac_cache_label = get_env_variable('AC_CACHE_LABEL') || abort('Cache label path must be defined.')
 
@@ -32,8 +29,9 @@ ac_callback_url = get_env_variable('ASPNETCORE_CALLBACK_URL') ||
 
 signed_url_api = "#{ac_callback_url}?action=getCacheUrls"
 
-install_deps_if_not_exist('curl')
-install_deps_if_not_exist('zip')
+# check dependencies
+run_command_silent('zip -v |head -2')
+run_command_silent('curl --version |head -1')
 
 @cache = "ac_cache/#{ac_cache_label}"
 zipped = "ac_cache/#{ac_cache_label.gsub('/', '_')}.zip"
@@ -95,6 +93,14 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   Dir.chdir(cwd)
 end
 
+def home
+  if OS.mac?
+    ENV['HOME']
+  else
+    '/setup'
+  end
+end
+
 def get_excluded_paths(paths)
   r_excludes = []
   g_excludes = []
@@ -103,10 +109,9 @@ def get_excluded_paths(paths)
     path = path[1..-1] if !path.empty? && path[0] == '/'
     next if path.empty?
 
-    # @todo: Check $home path for other types of agents and build profiles
     if path.start_with?('~/')
       path = path[('~/'.length)..-1]
-      g_excludes.push("/setup/#{path}")
+      g_excludes.push("#{home}/#{path}")
     else
       r_excludes.push(path)
     end
@@ -121,10 +126,9 @@ ac_cache_included_paths.split(':').each do |included_path|
   included_path = included_path[1..-1] if !included_path.empty? && included_path[0] == '/'
   next if included_path.empty?
 
-  # @todo: Check $home path for other types of agents and build profiles
   if included_path.start_with?('~/')
     included_path = included_path[('~/'.length)..-1]
-    cache_path('/setup', included_path, excluded_paths['global'])
+    cache_path(home, included_path, excluded_paths['global'])
   elsif ac_repository_path
     cache_repository_path(ac_repository_path, included_path, excluded_paths['repository'])
   else
