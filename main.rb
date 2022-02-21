@@ -10,28 +10,36 @@ def get_env_variable(key)
 end
 
 def run_command(command)
+  unless system(command)
+    puts "Unexpected exit with #{exit $CHILD_STATUS.exitstatus} code. Check logs for details."
+    exit 0
+  end
+end
+
+def run_command_with_log(command)
   puts "@@[command] #{command}"
-  exit $CHILD_STATUS.exitstatus unless system(command)
+  run_command(command)
 end
 
-def run_command_silent(command)
-  exit $CHILD_STATUS.exitstatus unless system(command)
+def abort_with0(message)
+  puts "@@[error] #{message}"
+  exit 0
 end
 
-ac_cache_included_paths = get_env_variable('AC_CACHE_INCLUDED_PATHS') || abort('Included paths must be defined.')
+ac_cache_included_paths = get_env_variable('AC_CACHE_INCLUDED_PATHS') || abort_with0('Included paths must be defined.')
 ac_cache_excluded_paths = get_env_variable('AC_CACHE_EXCLUDED_PATHS') || ''
 ac_repository_path = get_env_variable('AC_REPOSITORY_DIR')
-ac_cache_label = get_env_variable('AC_CACHE_LABEL') || abort('Cache label path must be defined.')
+ac_cache_label = get_env_variable('AC_CACHE_LABEL') || abort_with0('Cache label path must be defined.')
 
-ac_token_id = get_env_variable('AC_TOKEN_ID') || abort('AC_TOKEN_ID env variable must be set when build started.')
+ac_token_id = get_env_variable('AC_TOKEN_ID') || abort_with0('AC_TOKEN_ID env variable must be set when build started.')
 ac_callback_url = get_env_variable('ASPNETCORE_CALLBACK_URL') ||
-                  abort('ASPNETCORE_CALLBACK_URL env variable must be set when build started.')
+                  abort_with0('ASPNETCORE_CALLBACK_URL env variable must be set when build started.')
 
 signed_url_api = "#{ac_callback_url}?action=getCacheUrls"
 
 # check dependencies
-run_command_silent('zip -v |head -2')
-run_command_silent('curl --version |head -1')
+run_command('zip -v |head -2')
+run_command('curl --version |head -1')
 
 @cache = "ac_cache/#{ac_cache_label}"
 zipped = "ac_cache/#{ac_cache_label.gsub('/', '_')}.zip"
@@ -62,8 +70,8 @@ def cache_path(base_path, included_path, excluded_paths)
   excluded_paths.each do |excluded|
     zip += " #{excluded}"
   end
-  run_command("#{zip} > #{zip_file}.log")
-  run_command_silent("ls -lh #{zip_file}")
+  run_command_with_log("#{zip} > #{zip_file}.log")
+  run_command("ls -lh #{zip_file}")
 end
 
 def cache_repository_path(base_path, included_path, excluded_paths)
@@ -87,8 +95,8 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   excluded_paths.each do |excluded|
     zip += " #{excluded}"
   end
-  run_command("#{zip} > #{zip_file}.log")
-  run_command_silent("ls -lh #{zip_file}")
+  run_command_with_log("#{zip} > #{zip_file}.log")
+  run_command("ls -lh #{zip_file}")
 
   Dir.chdir(cwd)
 end
@@ -132,13 +140,13 @@ ac_cache_included_paths.split(':').each do |included_path|
   elsif ac_repository_path
     cache_repository_path(ac_repository_path, included_path, excluded_paths['repository'])
   else
-    puts "Warning: #{included_path} is ignored. It can be used only after Git Clone workflow step."
+    puts "Warning: #{included_path} is skipped. It can be used only after Git Clone workflow step."
   end
 end
 
-run_command_silent("[ -s #{zipped} ] || rm -f #{zipped}")
-run_command("zip -r -0 -FS #{zipped} #{@cache}")
-run_command_silent("ls -lh #{zipped}")
+run_command("[ -s #{zipped} ] || rm -f #{zipped}")
+run_command_with_log("zip -r -0 -FS #{zipped} #{@cache}")
+run_command("ls -lh #{zipped}")
 
 unless ac_token_id.empty?
   puts ''
@@ -154,6 +162,6 @@ unless ac_token_id.empty?
     puts signed['putUrl']
 
     ENV['AC_CACHE_PUT_URL'] = signed['putUrl']
-    run_command_silent("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
+    run_command("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
   end
 end
