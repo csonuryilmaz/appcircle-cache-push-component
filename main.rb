@@ -99,6 +99,8 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   zip_file = "#{cwd}/#{@cache}/repository/#{included_path.gsub('/', '_')}.zip"
   zip = "zip -r -FS #{zip_file}"
   paths.each do |f|
+    next if ['.', '..'].include?(f)
+
     zip += " #{f}"
   end
   zip += ' -x' unless excluded_paths.empty?
