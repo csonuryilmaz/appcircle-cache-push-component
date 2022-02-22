@@ -59,6 +59,17 @@ puts '------'
 
 system("mkdir -p #{@cache}/repository")
 
+def expand_exclude(pattern)
+  if pattern.end_with?('/\*')
+    exclude = "#{pattern.delete_suffix!('/\*')}/*"
+    exclude = "\"#{exclude}\""
+    exclude += " \"#{pattern.gsub('**/', '')}/*\"" if pattern.include? '**/'
+  else
+    exclude = "\"#{exclude}\""
+  end
+  exclude
+end
+
 def cache_path(base_path, included_path, excluded_paths)
   puts "Global Include: #{included_path}"
 
@@ -74,7 +85,7 @@ def cache_path(base_path, included_path, excluded_paths)
   end
   zip += ' -x' unless excluded_paths.empty?
   excluded_paths.each do |excluded|
-    zip += " #{excluded}"
+    zip += " #{expand_exclude(excluded)}"
   end
   if ac_output_dir
     system("mkdir -p #{ac_output_dir}/#{@cache}")
@@ -106,7 +117,7 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   end
   zip += ' -x' unless excluded_paths.empty?
   excluded_paths.each do |excluded|
-    zip += " #{excluded}"
+    zip += " #{expand_exclude(excluded)}"
   end
   if ac_output_dir
     system("mkdir -p #{ac_output_dir}/#{@cache}/repository")
