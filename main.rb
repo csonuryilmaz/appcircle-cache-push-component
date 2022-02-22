@@ -100,6 +100,7 @@ def cache_repository_path(base_path, included_path, excluded_paths)
   zip = "zip -r -FS #{zip_file}"
   paths.each do |f|
     next if ['.', '..'].include?(f)
+    next if f.end_with?('.') || f.end_with?('..')
 
     zip += " #{f}"
   end
