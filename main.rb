@@ -204,9 +204,7 @@ unless ac_token_id.empty?
     signed = JSON.parse(response)
     puts signed['putUrl']
 
-    system("cp #{zipped} #{ac_output_dir}/")
-
     ENV['AC_CACHE_PUT_URL'] = signed['putUrl']
-    run_command_with_log("curl -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
+    run_command_with_log("curl -0 -X PUT -H \"Content-Type: application/zip\" --upload-file #{zipped} $AC_CACHE_PUT_URL")
   end
 end
