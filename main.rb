@@ -62,7 +62,7 @@ puts '-----------'
 
 env_dirs = Hash.new('')
 ENV.each_pair do |k, v|
-  env_dirs[v] = k if File.directory?(v)
+  env_dirs[v] = k if k.start_with?('AC_') && File.directory?(v)
 end
 
 def expand_exclude(pattern)
