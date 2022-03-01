@@ -7,9 +7,10 @@ testApp="https://github.com/csonuryilmaz/TextPad.git"
 export GRADLE_OPTS="-Dorg.gradle.daemon=false"
 
 # Workflow step input variables (component.yml>inputs)
-#export AC_CACHE_INCLUDED_PATHS='foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/'
-export AC_CACHE_INCLUDED_PATHS='.gradle:~/.gradle:local.properties:/usr/local/share/**/*.cache'
-export AC_CACHE_EXCLUDED_PATHS='.gradle/**/*.lock:~/.gradle/caches/**/*.lock:/usr/local/share/**/mest*'
+export AC_TEMP_DIR="$HOME/app/workflow_data/xmwyp2xm.xje/_appcircle_temp"
+export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/:/usr/local/share/**/*.cache:$AC_TEMP_DIR/**/*.apk"
+#export AC_CACHE_INCLUDED_PATHS='.gradle:~/.gradle:local.properties:/usr/local/share/**/*.cache'
+export AC_CACHE_EXCLUDED_PATHS='.gradle/**/*.lock:~/.gradle/caches/**/*.lock:/usr/local/share/**/mime*:/usr/local/share/**/test.cache'
 #AC_CACHE_INCLUDED_PATHS="local.properties:.gradle:\$HOME/.gradle:/foo::/:bar"
 #export AC_CACHE_EXCLUDED_PATHS='~/.gradle/caches/*.lock:**/:**/apk/*:**/logs/*'
 export AC_REPOSITORY_DIR="$HOME/app/workflow_data/tjrdzp35.isa/_appcircle_temp/Repository"
@@ -18,6 +19,10 @@ export AC_CACHE_LABEL="8a7719b1-05fb-41c3-96e7-c764fdb036e1/master/app-deps"
 export AC_TOKEN_ID="x"
 export AC_CALLBACK_URL="https://dev-api.appcircle.io/build/v1/callback"
 export AC_OUTPUT_DIR="$HOME/Volumes/agent-disk/agent/workflow_data/fanby1hu.tmd/AC_OUTPUT_DIR"
+
+if [ ! -z $AC_TEMP_DIR ]; then 
+  mkdir -p $AC_TEMP_DIR
+fi 
 
 if [ ! -z $AC_OUTPUT_DIR ]; then 
   mkdir -p $AC_OUTPUT_DIR
@@ -50,8 +55,8 @@ fi
 START_TIME=$SECONDS
 echo ""
 echo "@@[section:begin] Step started: Cache Push"
-ruby main.rb
-#rdebug-ide main.rb
+#ruby main.rb
+rdebug-ide main.rb
 echo "@@[section:end] Step completed: Cache Push"
 ELAPSED_TIME=$(($SECONDS - $START_TIME))
 echo "took $ELAPSED_TIME s"
