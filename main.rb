@@ -148,7 +148,16 @@ def home
   end
 end
 
-def find_base_path(path)
+def search_env_dirs(path, env_dirs)
+  return path if env_dirs.key?(path)
+
+  index_of_slash = path.rindex('/')
+  return search_env_dirs(path[0..index_of_slash - 1], env_dirs) if index_of_slash.positive?
+
+  nil
+end
+
+def find_base_path(path, env_dirs)
   base_path = ''
   parts = path.split('/')
   order = 1
@@ -159,10 +168,11 @@ def find_base_path(path)
     base_path += "/#{w}" unless w.empty?
     order += 1
   end
-  base_path
+  env_path = search_env_dirs(base_path, env_dirs)
+  env_path || base_path
 end
 
-def get_excluded_paths(paths)
+def get_excluded_paths(paths, env_dirs)
   home = '~/'
 
   excludes = Hash.new('')
@@ -176,7 +186,7 @@ def get_excluded_paths(paths)
       path = path[(home.length)..-1]
       excludes[home].push(path)
     elsif path.start_with?('/')
-      base_path = find_base_path(path)
+      base_path = find_base_path(path, env_dirs)
       next unless base_path
 
       excludes[base_path] = [] unless excludes.key?(base_path)
@@ -188,7 +198,7 @@ def get_excluded_paths(paths)
   excludes
 end
 
-excluded_paths = get_excluded_paths(ac_cache_excluded_paths)
+excluded_paths = get_excluded_paths(ac_cache_excluded_paths, env_dirs)
 puts excluded_paths
 
 uptodate_zips = Set.new([])
@@ -201,7 +211,7 @@ ac_cache_included_paths.split(':').each do |included_path|
     included_path = included_path[('~/'.length)..-1]
     zip_file = cache_path(home, included_path, excluded_paths['~/'], env_dirs)
   elsif included_path.start_with?('/')
-    base_path = find_base_path(included_path)
+    base_path = find_base_path(included_path, env_dirs)
     next unless base_path
 
     zip_file = cache_path(base_path, included_path[(base_path.length + 1)..-1], excluded_paths[base_path], env_dirs)
