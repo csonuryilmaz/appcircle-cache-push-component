@@ -113,6 +113,11 @@ end
 def cache_path(base_path, included_path, excluded_paths, env_dirs)
   puts "Include: #{included_path} in #{base_path}"
 
+  unless Dir.exist?(base_path)
+    puts "Warning: #{base_path} doesn't exist yet. Check folder is correct and available."
+    return nil
+  end
+
   cwd = Dir.pwd
   Dir.chdir(base_path)
   paths = Dir.glob(included_path.to_s, File::FNM_DOTMATCH)

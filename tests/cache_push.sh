@@ -8,7 +8,7 @@ export GRADLE_OPTS="-Dorg.gradle.daemon=false"
 
 # Workflow step input variables (component.yml>inputs)
 export AC_TEMP_DIR="$HOME/app/workflow_data/xmwyp2xm.xje/_appcircle_temp"
-export AC_CACHE_INCLUDED_PATHS="foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/:/usr/local/share/**/*.cache:$AC_TEMP_DIR/**/*.apk"
+export AC_CACHE_INCLUDED_PATHS="/missing/folder/*.txt:foo:local.properties:.gradle/:~/.gradle/:~/bar:app/build/:/usr/local/share/**/*.cache:$AC_TEMP_DIR/**/*.apk"
 #export AC_CACHE_INCLUDED_PATHS='.gradle:~/.gradle:local.properties:/usr/local/share/**/*.cache'
 export AC_CACHE_EXCLUDED_PATHS='.gradle/**/*.lock:~/.gradle/caches/**/*.lock:/usr/local/share/**/mime*:/usr/local/share/**/test.cache'
 #AC_CACHE_INCLUDED_PATHS="local.properties:.gradle:\$HOME/.gradle:/foo::/:bar"
